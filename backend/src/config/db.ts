@@ -48,9 +48,21 @@ export const query = (text: string, params?: any[]): Promise<QueryResult> => {
   } else if (sqliteDb) {
     try {
       const convertedSql = convertSqliteParams(text);
-      const stmt = sqliteDb.prepare(convertedSql);
-      const rows = params ? stmt.all(...params) : stmt.all();
-      return Promise.resolve({ rows });
+    const stmt = sqliteDb.prepare(convertedSql);
+
+const isSelect = convertedSql.trim().toUpperCase().startsWith("SELECT");
+
+if (isSelect) {
+    const rows = params ? stmt.all(...params) : stmt.all();
+    return Promise.resolve({ rows });
+} else {
+    if (params) {
+        stmt.run(...params);
+    } else {
+        stmt.run();
+    }
+    return Promise.resolve({ rows: [] });
+}
     } catch (error) {
       console.error("better-sqlite3 Error:", error, "Query:", text, "Params:", params);
       return Promise.reject(error);
